@@ -1,4 +1,3 @@
-// File: backend/app.js
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -9,13 +8,18 @@ const fileRoutes = require('./routes/fileRoutes');
 
 const app = express();
 
-// CORS configuration
+// CORS configuration to allow multiple origins
 app.use(cors({
-  origin: 'http://localhost:3002', // Your frontend URL
+  origin: ['http://localhost:3002', 'http://172.24.240.1:3002'], // Allow both localhost and network IP
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true // If you're using cookies or need to send credentials
 }));
 
+// Enable preflight requests for all routes
+app.options('*', cors());
+
+// Middleware to parse JSON bodies
 app.use(express.json());
 
 // Register routes
