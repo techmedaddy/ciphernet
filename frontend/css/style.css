@@ -1,0 +1,61 @@
+/* File: frontend/css/style.css */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    text-align: center;
+    margin: 0;
+  }
+  
+  h1 {
+    color: #333;
+    margin-top: 50px;
+  }
+  
+  form {
+    display: inline-block;
+    margin-top: 30px;
+  }
+  
+  input {
+    padding: 10px;
+    margin: 10px;
+    border: 1px solid #ccc;
+  }
+  
+  button {
+    padding: 10px 20px;
+    background-color: #28a745;
+    color: #fff;
+    border: none;
+  }
+/* File: frontend/css/style.css */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    text-align: center;
+    margin: 0;
+  }
+  
+  h1 {
+    color: #333;
+    margin-top: 50px;
+  }
+  
+  form {
+    display: inline-block;
+    margin-top: 30px;
+  }
+  
+  input {
+    padding: 10px;
+    margin: 10px;
+    border: 1px solid #ccc;
+  }
+  
+  button {
+    padding: 10px 20px;
+    background-color: #28a745;
+    color: #fff;
+    border: none;
+  }
+    

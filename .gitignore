@@ -1,0 +1,55 @@
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.pid.lock
+
+# Directory for temporary items
+tmp/
+temp/
+
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# Docker-related files
+Dockerfile
+docker-compose.yml
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Test coverage reports
+coverage/
+*.lcov
+
+# Compiled output
+dist/
+build/
+
+# Debug files
+*.log
+*.lock
+*.swp
+*.bak
+*.tmp
+
+# IDE files
+.vscode/
+.idea/
+*.sublime-workspace
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Sensitive files
+vpn-config/openvpn/client.ovpn
+vpn-config/openvpn/server.conf
+vpn-config/ipsec/vpn_config.ipsec
