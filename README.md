@@ -1,7 +1,124 @@
-The Bank of Ireland Graduate Programme has attracted me due to its emphasis on transforming the banking experience through technology and data, which aligns perfectly with my passion for creating impactful, data-driven solutions. The programme's rotational structure offers an unparalleled opportunity to explore diverse areas such as Data Science, Data Engineering, and Business Analysis, enabling me to contribute to high-priority projects while developing a broad skill set across multiple disciplines.
+# CipherNet
 
-As a final-year student of Information Science and Engineering, I have built a solid foundation in backend development, data engineering, and cloud computing through hands-on projects such as PulseHTTP and TorrentEdge. In these projects, I utilized technologies like Node.js, Docker, and AWS to design and implement scalable, data-centric solutions, which mirror the digital transformation goals of Bank of Ireland. These experiences have honed my technical skills, problem-solving abilities, and capacity to manage end-to-end projects effectively.
+CipherNet is a modern, secure, and user-friendly VPN service built using Node.js and Express. It provides fast and secure internet connections, allowing users to connect to various VPN servers worldwide, ensuring encrypted communication and privacy protection.
 
-Additionally, my adaptability and eagerness to learn in fast-paced environments make me a strong fit for this programme. I am excited by the prospect of contributing to the bank’s strategy of becoming a digital-first financial provider, while also gaining valuable mentorship and exposure to senior leadership through the Digital Academy and Graduate Development Programme.
+## Project Overview
 
-I am confident that my technical skills, coupled with my enthusiasm for continuous learning and collaboration, will enable me to make meaningful contributions to Bank of Ireland's digital transformation efforts.
+CipherNet is designed to offer a comprehensive VPN solution with the following key features:
+
+- Secure user authentication
+- VPN connection management
+- Global server location selection
+- Encrypted file sharing capabilities
+- Detailed connection metrics
+- Industry-standard data encryption
+
+The platform features an intuitive and sleek HTML/CSS user interface, making VPN management accessible while maintaining high security standards. CipherNet is ideal for professionals seeking secure internet browsing and data sharing, as well as businesses aiming to safeguard sensitive data transmissions.
+
+## Key Features
+
+1. **User Authentication**
+   - Secure login with encrypted passwords
+   - JWT (JSON Web Tokens) for session management
+
+2. **VPN Connection Management**
+   - Easy connect/disconnect functionality
+   - Real-time status monitoring (connection status, server location, data usage)
+
+3. **Server Location Selection**
+   - Choose from various VPN servers globally (e.g., US, UK, Europe)
+
+4. **File Sharing**
+   - Secure upload and download of files (PDFs, images, videos, etc.)
+   - Maintained encryption and privacy during transfers
+
+5. **Connection Metrics**
+   - Detailed information including connected server IP, data usage, connection time, and encryption strength
+
+6. **Data Encryption**
+   - All VPN traffic encrypted using industry-standard protocols (e.g., OpenVPN, L2TP/IPsec)
+
+## Project Structure
+
+```
+CipherNet/
+├── backend/               # Backend directory for your Node.js application
+│   ├── controllers/       # Controllers for handling business logic
+│   │   ├── authController.js
+│   │   ├── vpnController.js
+│   │   ├── fileController.js
+│   ├── models/            # Mongoose models for MongoDB
+│   │   ├── userModel.js
+│   │   ├── connectionLogModel.js
+│   ├── routes/            # Route definitions
+│   │   ├── authRoutes.js
+│   │   ├── vpnRoutes.js
+│   │   ├── fileRoutes.js
+│   ├── services/          # Service files for business logic
+│   │   ├── vpnService.js
+│   │   ├── encryptionService.js
+│   ├── middleware/        # Middleware functions
+│   │   ├── authMiddleware.js
+│   │   ├── fileMiddleware.js
+│   ├── utils/             # Utility functions
+│   │   └── vpnUtils.js
+│   ├── config/            # Configuration files
+│   │   └── config.js
+│   ├── app.js             # Main app file
+│   ├── server.js          # Server entry point
+│   └── .env               # Environment variables
+├── frontend/              # Frontend directory for your client application
+│   ├── css/               # Stylesheets
+│   │   └── style.css
+│   ├── images/            # Images for the frontend
+│   ├── js/                # JavaScript files
+│   │   └── script.js      # Main JavaScript for the frontend
+│   ├── index.html         # Entry point HTML file
+│   ├── dashboard.html      # Dashboard HTML file
+├── vpn-config/            # VPN configuration files
+│   ├── openvpn/
+│   │   ├── server.conf
+│   │   └── client.ovpn
+│   ├── ipsec/
+│   │   └── vpn_config.ipsec
+├── logs/                  # Log files
+│   ├── connection.log
+├── Docker/                # Docker configuration
+│   ├── Dockerfile
+│   ├── docker-compose.yml
+├── tests/                 # Test files
+│   ├── vpn.test.js
+│   ├── auth.test.js
+├── package.json           # Main package.json for Node.js dependencies
+├── README.md              # Project documentation
+└── .gitignore             # Git ignore file
+
+```
+
+## Backend (Node.js/Express)
+
+- **Controllers**: Manage business logic for authentication, VPN connections, and file sharing.
+- **Models**: Define data schemas for users and connection logs.
+- **Routes**: Handle HTTP requests for auth, VPN, and file operations.
+- **Services**: Implement core VPN connection and encryption logic.
+- **Middleware**: Protect routes and validate file uploads.
+- **Utils**: Provide helper functions for VPN operations.
+- **Config**: Store application configuration and environment variables.
+
+## Frontend (HTML/CSS)
+
+- Clean and responsive user interface for login and dashboard.
+- Real-time display of VPN status and metrics.
+
+## VPN Configurations
+
+- Includes setup for OpenVPN and IPsec protocols.
+
+## Docker Support
+
+- Dockerfile and docker-compose.yml for easy deployment and scaling.
+
+## Testing
+
+- Unit tests for VPN functionality and authentication.
+
