@@ -10,7 +10,7 @@ const app = express();
 
 // CORS configuration to allow multiple origins
 app.use(cors({
-  origin: ['http://localhost:3002', 'http://172.24.240.1:3002'], // Allow both localhost and network IP
+  origin: ['http://localhost:8080', 'http://172.24.240.1:8080'], // Allow frontend on port 8080
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true // If you're using cookies or need to send credentials

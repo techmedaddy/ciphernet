@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - CipherNet</title>
-    <link rel="stylesheet" href="css/style.css"> <!-- Link to your CSS file -->
+    <link rel="stylesheet" href="css/style.css"> <!-- Ensure this path is correct -->
 </head>
 <body>
     <header>
@@ -15,15 +15,15 @@
         <!-- Login Form -->
         <form id="loginForm">
             <h2>Login</h2>
-            <input type="text" id="loginUsername" placeholder="Username" required>
-            <input type="password" id="loginPassword" placeholder="Password" required>
+            <input type="text" id="loginUsername" placeholder="Username" required aria-label="Username">
+            <input type="password" id="loginPassword" placeholder="Password" required aria-label="Password">
             <button type="submit">Login</button>
         </form>
 
         <!-- Toggle Forms Link -->
-        <p id="toggleForms" style="cursor: pointer; color: blue;">Don't have an account? <a href="register.html">Register here</a></p>
+        <p id="toggleForms">Don't have an account? <a href="register.html">Register here</a></p>
     </div>
 
-    <script src="js/script.js"></script> <!-- Link to your script file -->
+    <script src="js/script.js"></script> <!-- Ensure this path is correct -->
 </body>
 </html>
