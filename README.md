@@ -43,6 +43,14 @@ The platform features an intuitive and sleek HTML/CSS user interface, making VPN
 
 6. **Data Encryption**
    - All VPN traffic encrypted using industry-standard protocols (e.g., OpenVPN, L2TP/IPsec)
+  
+
+![image](https://github.com/user-attachments/assets/93acd854-4a94-46d4-b8d0-4753df0e6832)
+
+
+![image](https://github.com/user-attachments/assets/3619e5fd-fb76-4c27-8aca-6b8d3d05aa69)
+
+
 
 ## Project Structure
 
