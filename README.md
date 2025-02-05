@@ -36,7 +36,7 @@ The platform features an intuitive and sleek HTML/CSS user interface, making VPN
 
 4. **File Sharing**
    - Secure upload and download of files (PDFs, images, videos, etc.)
-   - Maintained encryption and privacy during transfers
+   - Maintained encryption and privacy during transfer
 
 5. **Connection Metrics**
    - Detailed information including connected server IP, data usage, connection time, and encryption strength
