@@ -4,6 +4,9 @@ CipherNet is a modern, secure, and user-friendly VPN service built using Node.js
 
 ![WhatsApp Image 2024-10-17 at 21 57 35_2d246f50](https://github.com/user-attachments/assets/d0f54a06-d26c-4461-b2bc-0d7f43ed18f9)
 
+## 🛠️🖥️ System Design 
+
+![image](https://github.com/user-attachments/assets/27115c5e-68a6-47f5-badb-efb9a302e1ea)
 
 
 
