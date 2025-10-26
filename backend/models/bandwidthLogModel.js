@@ -1,39 +1,61 @@
-// File: backend/models/bandwidthLogModel.js
-
 const mongoose = require('mongoose');
 
-// Define the Bandwidth Log schema
 const bandwidthLogSchema = new mongoose.Schema({
     user: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User', // Reference to the User model
+        ref: 'User',
         required: true,
+        unique: true,
+        index: true
     },
-    bandwidthUsed: {
+    bandwidthUsedBytes: {
         type: Number,
-        default: 0, // Bandwidth usage in MB or GB (depending on your requirement)
+        default: 0,
     },
-    limit: {
+    quotaBytes: {
         type: Number,
-        default: 1024, // Default limit in MB (1 GB)
         required: true,
+        default: 1073741824, // 1 GB
     },
-    lastUpdated: {
+    cycleStartDate: {
         type: Date,
-        default: Date.now, // Automatically sets the last updated time
+        default: Date.now
     },
-}, { timestamps: true }); // Adds createdAt and updatedAt fields automatically
+    cycleResetDate: {
+        type: Date,
+        required: true
+    }
+}, { timestamps: true });
 
-// Middleware to update `lastUpdated` field
-bandwidthLogSchema.pre('save', function (next) {
-    this.lastUpdated = Date.now();
-    next();
-});
-
-// Static method to reset bandwidth usage (e.g., for monthly resets)
-bandwidthLogSchema.statics.resetBandwidthUsage = async function () {
-    await this.updateMany({}, { $set: { bandwidthUsed: 0 } });
+bandwidthLogSchema.methods.addUsage = async function (bytes) {
+    this.bandwidthUsedBytes += bytes;
+    return this.save();
 };
 
-// Export the Bandwidth Log model
+bandwidthLogSchema.methods.isOverQuota = function () {
+    return this.bandwidthUsedBytes >= this.quotaBytes;
+};
+
+bandwidthLogSchema.methods.resetCycle = function (newResetDate, newQuotaBytes) {
+    this.bandwidthUsedBytes = 0;
+    this.cycleStartDate = new Date();
+    this.cycleResetDate = newResetDate;
+    if (newQuotaBytes) {
+        this.quotaBytes = newQuotaBytes;
+    }
+    return this.save();
+};
+
+bandwidthLogSchema.statics.resetExpiredCycles = async function () {
+    const now = new Date();
+    const expiredDocs = await this.find({ cycleResetDate: { $lte: now } });
+    
+    for (const doc of expiredDocs) {
+        const newResetDate = new Date(doc.cycleResetDate);
+        newResetDate.setMonth(newResetDate.getMonth() + 1);
+        
+        await doc.resetCycle(newResetDate);
+    }
+};
+
 module.exports = mongoose.model('BandwidthLog', bandwidthLogSchema);

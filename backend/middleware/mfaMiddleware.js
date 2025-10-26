@@ -1,27 +1,44 @@
 const twilio = require('twilio');
-const User = require('../models/userModel');
 const jwt = require('jsonwebtoken');
-
+const User = require('../models/userModel');
+const AppError = require('../utils/appError');
+const asyncHandler = require('../utils/asyncHandler');
+const { jwtSecret } = require('../config/config');
 const { TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER } = process.env;
 
 const client = twilio(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
 
-module.exports = async (req, res, next) => {
+module.exports = asyncHandler(async (req, res, next) => {
     const { otp, userId } = req.body;
 
-    try {
-        const user = await User.findById(userId);
-
-        if (!user || user.otp !== otp) {
-            return res.status(401).json({ error: 'Invalid OTP' });
-        }
-
-        // Generate a new JWT after OTP verification
-        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-
-        res.status(200).json({ message: 'MFA successful', token });
-    } catch (error) {
-        console.error('[ERROR] MFA Middleware:', error.message);
-        res.status(500).json({ error: 'MFA validation failed.' });
+    if (!otp || !userId) {
+        return next(new AppError('Please provide OTP and User ID.', 400));
     }
-};
+
+    const user = await User.findById(userId).select('+otp +otpExpires');
+
+    if (!user) {
+        return next(new AppError('Invalid OTP or User.', 401));
+    }
+    
+    const isMatch = (otp === user.otp);
+    if (!isMatch) {
+        return next(new AppError('Invalid OTP.', 401));
+    }
+
+    if (user.otpExpires < Date.now()) {
+        return next(new AppError('OTP has expired. Please request a new one.', 401));
+    }
+
+    user.otp = undefined;
+    user.otpExpires = undefined;
+    await user.save({ validateBeforeSave: false });
+    
+    const token = user.generateJwtToken();
+
+    res.status(200).json({
+        status: 'success',
+        message: 'MFA successful',
+        token
+    });
+});

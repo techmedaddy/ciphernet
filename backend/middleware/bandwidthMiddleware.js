@@ -1,25 +1,25 @@
-const ConnectionLog = require('../models/connectionLogModel');
+const BandwidthLog = require('../models/bandwidthLogModel');
+const AppError = require('../utils/appError');
+const asyncHandler = require('../utils/asyncHandler');
 
-module.exports = async (req, res, next) => {
-    const { userId } = req.user;
+const bandwidthCheckMiddleware = asyncHandler(async (req, res, next) => {
+    const userId = req.user._id;
 
-    try {
-        const connectionLog = await ConnectionLog.findOne({ user: userId }).sort({ connectionTime: -1 });
-
-        if (!connectionLog) {
-            return res.status(404).json({ error: 'No active VPN connection found.' });
-        }
-
-        // Assume the limit is 1GB (1024MB)
-        const bandwidthLimitMB = 1024;
-
-        if (connectionLog.dataUsage >= bandwidthLimitMB) {
-            return res.status(403).json({ error: 'Bandwidth limit exceeded. Disconnecting VPN.' });
-        }
-
-        next();
-    } catch (error) {
-        console.error('[ERROR] Bandwidth Middleware:', error.message);
-        res.status(500).json({ error: 'Failed to monitor bandwidth.' });
+    if (!userId) {
+        return next(new AppError('User not found. This middleware must be used after "protect".', 401));
     }
-};
+
+    const bandwidthLog = await BandwidthLog.findOne({ user: userId });
+
+    if (!bandwidthLog) {
+        return next(new AppError('No bandwidth log found for this user. Subscription may be incomplete.', 404));
+    }
+
+    if (bandwidthLog.isOverQuota()) {
+        return next(new AppError('Bandwidth limit exceeded. Please upgrade your plan or wait for the next cycle.', 403));
+    }
+
+    next();
+});
+
+module.exports = bandwidthCheckMiddleware;

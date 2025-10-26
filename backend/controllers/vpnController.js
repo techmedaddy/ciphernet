@@ -1,49 +1,82 @@
-// File: backend/controllers/authController.js
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
-const User = require('../models/userModel');
+const vpnService = require('../services/vpnService');
+const ConnectionLog = require('../models/connectionLogModel');
+const AppError = require('../utils/appError');
+const asyncHandler = require('../utils/asyncHandler');
+const { getAvailableServers } = require('../utils/vpnUtils');
 
-// Register a new user
-exports.register = async (req, res) => {
-    const { username, password } = req.body;
+exports.connectToVpn = asyncHandler(async (req, res, next) => {
+    const { serverLocation } = req.body;
+    const userId = req.user._id;
 
-    try {
-        // Check if the user already exists
-        const existingUser = await User.findOne({ username });
-        if (existingUser) {
-            return res.status(400).json({ error: 'User already exists' });
-        }
-
-        // Hash the password
-        const hashedPassword = await bcrypt.hash(password, 12);
-
-        // Create a new user
-        const user = new User({ username, password: hashedPassword });
-        await user.save();
-
-        res.status(201).json({ message: 'User registered successfully' });
-    } catch (error) {
-        console.error('Error registering user:', error);
-        res.status(500).json({ error: 'Internal server error' });
+    if (!serverLocation) {
+        return next(new AppError('Please provide a server location.', 400));
     }
-};
 
-// Login user
-exports.login = async (req, res) => {
-    const { username, password } = req.body;
+    const { connection, status } = await vpnService.connect(userId, serverLocation);
 
-    try {
-        // Find user by username
-        const user = await User.findOne({ username });
-        if (!user || !await bcrypt.compare(password, user.password)) {
-            return res.status(401).json({ error: 'Invalid credentials' });
+    res.status(200).json({
+        status: 'success',
+        message: status,
+        data: {
+            connectionId: connection._id,
+            serverLocation: connection.serverLocation
         }
+    });
+});
 
-        // Generate JWT token
-        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-        res.status(200).json({ token });
-    } catch (error) {
-        console.error('Error logging in:', error);
-        res.status(500).json({ error: 'Internal server error' });
+exports.disconnectFromVpn = asyncHandler(async (req, res, next) => {
+    const userId = req.user._id;
+    const { status, log } = await vpnService.disconnect(userId);
+
+    res.status(200).json({
+        status: 'success',
+        message: status,
+        data: {
+            durationMinutes: log.durationMinutes,
+            dataDownloadedMB: log.dataDownloadedMB,
+            dataUploadedMB: log.dataUploadedMB
+        }
+    });
+});
+
+exports.getConnectionStatus = asyncHandler(async (req, res, next) => {
+    const userId = req.user._id;
+    const log = await ConnectionLog.findOne({ 
+        user: userId, 
+        status: 'active' 
+    });
+
+    if (!log) {
+        return res.status(200).json({
+            status: 'success',
+            data: {
+                isConnected: false,
+                connection: null
+            }
+        });
     }
-};
+
+    res.status(200).json({
+        status: 'success',
+        data: {
+            isConnected: true,
+            connection: {
+                _id: log._id,
+                serverLocation: log.serverLocation,
+                connectionTime: log.connectionTime,
+                clientIp: log.clientIp
+            }
+        }
+    });
+});
+
+exports.getVpnServers = asyncHandler(async (req, res, next) => {
+    const servers = getAvailableServers();
+    res.status(200).json({
+        status: 'success',
+        count: servers.length,
+        data: {
+            servers
+        }
+    });
+});

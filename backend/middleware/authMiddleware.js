@@ -1,15 +1,42 @@
-// File: backend/middleware/authMiddleware.js
 const jwt = require('jsonwebtoken');
+const { jwtSecret } = require('../config/config');
+const User = require('../models/userModel');
+const AppError = require('../utils/appError');
 
-module.exports = (req, res, next) => {
-  const token = req.header('Authorization').replace('Bearer ', '');
-  if (!token) return res.status(403).json({ error: 'Access denied' });
+exports.protect = async (req, res, next) => {
+    let token;
+    
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+        token = req.headers.authorization.split(' ')[1];
+    }
 
-  try {
-    const verified = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = verified;
-    next();
-  } catch (err) {
-    res.status(401).json({ error: 'Invalid token' });
-  }
+    if (!token) {
+        return next(new AppError('Access denied. No token provided.', 401));
+    }
+
+    try {
+        const decoded = jwt.verify(token, jwtSecret);
+
+        const freshUser = await User.findById(decoded.id).select('-password');
+
+        if (!freshUser) {
+            return next(new AppError('The user belonging to this token no longer exists.', 401));
+        }
+        
+        req.user = freshUser;
+        next();
+    } catch (err) {
+        return next(new AppError('Invalid token.', 401));
+    }
+};
+
+exports.authorize = (...roles) => {
+    return (req, res, next) => {
+        if (!req.user || !roles.includes(req.user.role)) {
+            return next(
+                new AppError(`User role '${req.user.role}' is not authorized to access this route.`, 403)
+            );
+        }
+        next();
+    };
 };

@@ -1,32 +1,25 @@
 const express = require('express');
-const { register, login } = require('../controllers/authController');
 const router = express.Router();
+const {
+    register,
+    login,
+    logout,
+    getMe,
+    setupMFA,
+    verifyMFA,
+    disableMFA
+} = require('../controllers/authController');
+const { protect } = require('../middleware/authMiddleware');
 
-// Route for user registration
-router.post('/register', async (req, res, next) => {
-    try {
-        console.log('[INFO] Registration request received');
-        await register(req, res);
-    } catch (error) {
-        console.error('[ERROR] Registration failed:', error.message);
-        next(error);
-    }
-});
+router.post('/register', register);
+router.post('/login', login);
 
-// Route for user login
-router.post('/login', async (req, res, next) => {
-    try {
-        console.log('[INFO] Login request received');
-        await login(req, res);
-    } catch (error) {
-        console.error('[ERROR] Login failed:', error.message);
-        next(error);
-    }
-});
+router.post('/logout', protect, logout);
+router.get('/me', protect, getMe);
 
-// Health check route
-router.get('/health', (req, res) => {
-    res.status(200).json({ message: 'Auth service is healthy' });
-});
+router.post('/mfa/setup', protect, setupMFA);
+router.post('/mfa/verify', protect, verifyMFA);
+router.post('/mfa/disable', protect, disableMFA);
 
 module.exports = router;
+
