@@ -1,0 +1,37 @@
+version: '3'
+services:
+  vpn-app:
+    build:
+      context: ..   # Ensure context points to the parent directory
+      dockerfile: docker/Dockerfile  # Specify Dockerfile for backend
+    ports:
+      - "3001:3000"  # Map host port 3001 to container port 3000
+    environment:
+      - NODE_ENV=production
+    volumes:
+      - ../backend:/usr/src/app/backend  # Mount the backend source code
+      - /usr/src/app/node_modules  # Persist node_modules to avoid reinstalling
+    depends_on:
+      - database  # Ensure the database starts first
+
+  frontend:
+    build:
+      context: ..   # Ensure context points to the parent directory
+      dockerfile: docker/Dockerfile  # Use the same Dockerfile for the frontend
+    ports:
+      - "8080:8080"  # Expose the frontend on port 8080
+    volumes:
+      - ../frontend:/usr/src/app/frontend  # Mount the frontend source code
+    command: "node frontend/server.js"  # Start the frontend server
+    depends_on:
+      - vpn-app  # Ensure the backend starts before frontend
+
+  database:
+    image: mongo
+    ports:
+      - "27017:27017"  # Expose MongoDB on port 27017
+    volumes:
+      - db_data:/data/db  # Persist database data
+
+volumes:
+  db_data:  # Named volume for MongoDB data
