@@ -1,25 +1,15 @@
-const app = require('./app');
-const mongoose = require('mongoose');
+const http = require('http');
+const app = require('./app'); // Express app
+const initWebSocketServer = require('./utils/notificationUtils');
 
-// Load environment variables from .env file
-require('dotenv').config();
+// HTTP server
+const server = http.createServer(app);
 
-// MongoDB connection using environment variables
-const dbURI = process.env.DB_URI || 'mongodb://localhost:27017/your_database_name';
+// Initialize WebSocket
+initWebSocketServer(server);
 
-// Connect to MongoDB
-mongoose.connect(dbURI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-})
-.then(() => console.log('MongoDB connected successfully'))
-.catch(err => {
-    console.error('MongoDB connection error:', err);
-    process.exit(1); // Exit the process if MongoDB connection fails
-});
-
-// Start the server
-const PORT = process.env.PORT || 3001; // Default port set to 3000
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+// Start server
+const PORT = process.env.PORT || 3001;
+server.listen(PORT, () => {
+    console.log(`Backend server is running on http://localhost:${PORT}`);
 });

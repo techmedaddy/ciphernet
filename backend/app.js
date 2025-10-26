@@ -1,41 +1,32 @@
-require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const mongoose = require('mongoose');
 const authRoutes = require('./routes/authRoutes');
 const vpnRoutes = require('./routes/vpnRoutes');
-const fileRoutes = require('./routes/fileRoutes');
+const subscriptionRoutes = require('./routes/subscriptionRoutes');
 
 const app = express();
 
-// CORS configuration to allow multiple origins
-app.use(cors({
-  origin: ['http://localhost:8080', 'http://172.24.240.1:8080'], // Allow frontend on port 8080
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true // If you're using cookies or need to send credentials
-}));
-
-// Enable preflight requests for all routes
-app.options('*', cors());
-
-// Middleware to parse JSON bodies
+// Middleware
+app.use(cors({ origin: 'http://localhost:8080' }));
 app.use(express.json());
 
-// Register routes
+// Routes
+app.get('/', (req, res) => {
+    res.status(200).json({ message: 'Welcome to CipherNet API' });
+});
 app.use('/api/auth', authRoutes);
 app.use('/api/vpn', vpnRoutes);
-app.use('/api/files', fileRoutes);
+app.use('/api/subscription', subscriptionRoutes);
 
-// Error handling middleware
+// 404 Handler
+app.use((req, res) => {
+    res.status(404).json({ error: 'Route not found' });
+});
+
+// Error Handler
 app.use((err, req, res, next) => {
-    console.error('Error details:', err);
-    res.status(err.status || 500).json({
-        error: {
-            message: err.message || 'Internal server error',
-            status: err.status || 500
-        }
-    });
+    console.error(err.stack);
+    res.status(500).json({ error: 'Internal Server Error' });
 });
 
 module.exports = app;
