@@ -1,23 +1,25 @@
 // File: backend/routes/vpnRoutes.js
 const express = require('express');
-const { connectVPN, disconnectVPN } = require('../controllers/vpnController');
-const authMiddleware = require('../middleware/authMiddleware');
+const { 
+    connectToVpn, 
+    disconnectFromVpn, 
+    getConnectionStatus, 
+    getVpnServers 
+} = require('../controllers/vpnController');
+const { protect } = require('../middleware/authMiddleware');
+
 const router = express.Router();
 
-router.post('/connect', authMiddleware, async (req, res, next) => {
-    try {
-        await connectVPN(req, res);
-    } catch (error) {
-        next(error);
-    }
-});
+// Connect to VPN
+router.post('/connect', protect, connectToVpn);
 
-router.post('/disconnect', authMiddleware, async (req, res, next) => {
-    try {
-        await disconnectVPN(req, res);
-    } catch (error) {
-        next(error);
-    }
-});
+// Disconnect from VPN
+router.post('/disconnect', protect, disconnectFromVpn);
+
+// Get current connection status
+router.get('/status', protect, getConnectionStatus);
+
+// Get available VPN servers
+router.get('/servers', protect, getVpnServers);
 
 module.exports = router;

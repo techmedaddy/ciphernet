@@ -1,24 +1,26 @@
 // File: backend/routes/fileRoutes.js
 const express = require('express');
-const { uploadFile, downloadFile } = require('../controllers/fileController');
-const authMiddleware = require('../middleware/authMiddleware');
-const fileMiddleware = require('../middleware/fileMiddleware');
+const { 
+    uploadFile, 
+    downloadFile, 
+    getFiles, 
+    deleteFile 
+} = require('../controllers/fileController');
+const { protect } = require('../middleware/authMiddleware');
+const { uploadFile: uploadMiddleware, checkFileExists } = require('../middleware/fileMiddleware');
+
 const router = express.Router();
 
-router.post('/upload', authMiddleware, fileMiddleware, async (req, res, next) => {
-    try {
-        await uploadFile(req, res);
-    } catch (error) {
-        next(error);
-    }
-});
+// Upload a file (with multer middleware)
+router.post('/upload', protect, uploadMiddleware, checkFileExists, uploadFile);
 
-router.get('/download/:filename', authMiddleware, async (req, res, next) => {
-    try {
-        await downloadFile(req, res);
-    } catch (error) {
-        next(error);
-    }
-});
+// Get all files for current user
+router.get('/', protect, getFiles);
+
+// Download a specific file by ID
+router.get('/download/:fileId', protect, downloadFile);
+
+// Delete a file by ID
+router.delete('/:fileId', protect, deleteFile);
 
 module.exports = router;

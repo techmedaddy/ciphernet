@@ -36,6 +36,15 @@ const userSchema = new mongoose.Schema({
         type: String,
         enum: ['active', 'inactive', 'trial', 'lapsed'],
         default: 'inactive'
+    },
+    mfaEnabled: {
+        type: Boolean,
+        default: false,
+        select: false
+    },
+    mfaSecret: {
+        type: String,
+        select: false
     }
 }, { 
     timestamps: true 

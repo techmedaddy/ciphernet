@@ -65,10 +65,12 @@ function sendTimeoutNotification(userId) {
     broadcastNotification(notification);
 }
 
-module.exports = {
-    initializeWebSocket,
-    sendNotificationToClient,
-    broadcastNotification,
-    sendHighBandwidthNotification,
-    sendTimeoutNotification,
-};
+// Default export for server.js compatibility
+module.exports = initializeWebSocket;
+
+// Named exports for other uses
+module.exports.initializeWebSocket = initializeWebSocket;
+module.exports.sendNotificationToClient = sendNotificationToClient;
+module.exports.broadcastNotification = broadcastNotification;
+module.exports.sendHighBandwidthNotification = sendHighBandwidthNotification;
+module.exports.sendTimeoutNotification = sendTimeoutNotification;
