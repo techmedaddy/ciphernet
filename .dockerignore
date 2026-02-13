@@ -2,10 +2,6 @@
 node_modules/
 */node_modules/
 
-# Build outputs
-dist/
-build/
-
 # Logs
 logs/
 *.log
@@ -21,11 +17,6 @@ backend/.env
 .git/
 .gitignore
 
-# Docker
-Docker/
-*.Dockerfile
-docker-compose*.yml
-
 # IDE
 .idea/
 .vscode/
@@ -35,10 +26,13 @@ docker-compose*.yml
 # OS
 .DS_Store
 Thumbs.db
+desktop.ini
+*.lnk
 
 # Test
 coverage/
 .nyc_output/
+tests/
 
 # Misc
 README.md

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # CipherNet Docker Startup Script
-# Finds available random ports and starts all services
+# Finds available random ports and starts backend + MongoDB
 
 set -e
 
@@ -22,20 +22,17 @@ find_available_port() {
     echo $port
 }
 
-# Find available ports starting from random high numbers
+# Find available ports
 echo "🔍 Finding available ports..."
 BACKEND_PORT=$(find_available_port 43001)
-FRONTEND_PORT=$(find_available_port 48080)
 MONGO_PORT=$(find_available_port 47017)
 
 echo "📦 Using ports:"
-echo "   Backend:  $BACKEND_PORT"
-echo "   Frontend: $FRONTEND_PORT"
-echo "   MongoDB:  $MONGO_PORT"
+echo "   Backend API: $BACKEND_PORT"
+echo "   MongoDB:     $MONGO_PORT"
 
 # Export for docker-compose
 export BACKEND_PORT
-export FRONTEND_PORT
 export MONGO_PORT
 
 # Generate a random JWT secret if not set
@@ -49,7 +46,7 @@ if [ -z "$ENCRYPTION_KEY" ]; then
 fi
 
 echo ""
-echo "🚀 Starting CipherNet..."
+echo "🚀 Starting CipherNet Backend..."
 docker compose up --build -d
 
 echo ""
@@ -59,12 +56,15 @@ sleep 5
 # Check if services are running
 if docker compose ps | grep -q "healthy"; then
     echo ""
-    echo "✅ CipherNet is running!"
+    echo "✅ CipherNet Backend is running!"
     echo ""
-    echo "🌐 Access the application:"
-    echo "   Frontend: http://localhost:$FRONTEND_PORT"
-    echo "   Backend:  http://localhost:$BACKEND_PORT"
-    echo "   MongoDB:  mongodb://localhost:$MONGO_PORT/ciphernet"
+    echo "🌐 API Endpoints:"
+    echo "   Base URL:  http://localhost:$BACKEND_PORT"
+    echo "   API:       http://localhost:$BACKEND_PORT/api/v1"
+    echo "   Health:    http://localhost:$BACKEND_PORT/api/v1/health"
+    echo ""
+    echo "🗄️  MongoDB:"
+    echo "   URI:       mongodb://localhost:$MONGO_PORT/ciphernet"
     echo ""
     echo "📋 Useful commands:"
     echo "   View logs:    docker compose logs -f"

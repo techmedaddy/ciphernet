@@ -1,5 +1,4 @@
-# CipherNet Docker Compose
-# Uses random high ports to avoid conflicts
+# CipherNet Docker Compose - Backend API + MongoDB
 # Run: docker compose up --build
 
 services:
@@ -38,8 +37,7 @@ services:
       JWT_EXPIRE: 7d
       JWT_COOKIE_EXPIRES_IN: "7"
       ENCRYPTION_KEY: ${ENCRYPTION_KEY:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
-      FRONTEND_URL: http://localhost:${FRONTEND_PORT:-48080}
-      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-sk_test_placeholder}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
     ports:
       - "${BACKEND_PORT:-43001}:3000"
@@ -52,30 +50,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 15s
-    networks:
-      - ciphernet-network
-
-  # Frontend Static Server
-  frontend:
-    build:
-      context: ..
-      dockerfile: Docker/frontend.Dockerfile
-    container_name: ciphernet-frontend
-    restart: unless-stopped
-    environment:
-      PORT: "8080"
-      API_URL: http://localhost:${BACKEND_PORT:-43001}/api/v1
-    ports:
-      - "${FRONTEND_PORT:-48080}:8080"
-    depends_on:
-      backend:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
     networks:
       - ciphernet-network
 
