@@ -4,124 +4,131 @@ const BandwidthLog = require('../models/bandwidthLogModel');
 const AppError = require('../utils/appError');
 const vpnUtils = require('../utils/vpnUtils');
 
-const DUMMY_SERVER_LIST = [
-    { id: 'us-east', location: 'New York, USA', ip: '123.45.67.89' },
-    { id: 'eu-west', location: 'London, UK', ip: '98.76.54.32' },
-    { id: 'asia-east', location: 'Tokyo, Japan', ip: '101.12.13.14' },
-];
+// Allow free tier for testing (set to false in production)
+const ALLOW_FREE_TIER = process.env.ALLOW_FREE_TIER !== 'false';
 
 exports.connect = async (userId, serverId, userIp) => {
-    const activeSub = await Subscription.findOne({ 
-        user: userId, 
-        status: 'active' 
-    });
+    // Check subscription (skip if free tier allowed)
+    if (!ALLOW_FREE_TIER) {
+        const activeSub = await Subscription.findOne({ 
+            user: userId, 
+            status: { $in: ['active', 'trial'] }
+        });
 
-    if (!activeSub) {
-        throw new AppError('No active subscription found. Please subscribe to connect.', 403);
-    }
-    
-    if (activeSub.currentPeriodEnd <= new Date()) {
-        throw new AppError('Your subscription has expired.', 403);
+        if (!activeSub) {
+            throw new AppError('No active subscription found. Please subscribe to connect.', 403);
+        }
+        
+        if (activeSub.endDate && activeSub.endDate <= new Date()) {
+            throw new AppError('Your subscription has expired.', 403);
+        }
+
+        // Check bandwidth quota
+        const bandwidth = await BandwidthLog.findOne({ user: userId });
+        if (bandwidth && bandwidth.isOverQuota()) {
+            throw new AppError('You have exceeded your monthly bandwidth quota.', 403);
+        }
     }
 
-    const bandwidth = await BandwidthLog.findOne({ user: userId });
-    if (bandwidth && bandwidth.isOverQuota()) {
-        throw new AppError('You have exceeded your monthly bandwidth quota.', 403);
-    }
-
-    const server = DUMMY_SERVER_LIST.find(s => s.id === serverId);
+    // Find server
+    const server = vpnUtils.getServerById(serverId);
     if (!server) {
-        throw new AppError('Invalid server location.', 400);
+        throw new AppError('Invalid server location. Use server ID like "us-east".', 400);
     }
 
+    // Check for existing connection
     const existingConnection = await ConnectionLog.findOne({
         user: userId,
         status: 'connected'
     });
     if (existingConnection) {
-        throw new AppError('User is already connected to a VPN server.', 409);
+        throw new AppError('Already connected to a VPN server. Disconnect first.', 409);
     }
 
+    // Connect to server (simulated)
     const connectionDetails = await vpnUtils.connectToServer(server.ip, userId);
 
+    // Create connection log
     const newLog = new ConnectionLog({
         user: userId,
         serverLocation: server.location,
-        serverIp: server.ip,
-        userIp: userIp,
+        ipAddress: connectionDetails.assignedIp || `10.8.0.${Math.floor(Math.random() * 254) + 1}`,
         status: 'connected',
+        connectionTime: new Date()
     });
 
     await newLog.save();
 
     return {
-        status: 'success',
-        connectionLogId: newLog._id,
-        server: server,
-        connectionInfo: connectionDetails
+        connection: newLog,
+        status: `Connected to ${server.location}`
     };
 };
 
-exports.disconnect = async (userId, connectionLogId) => {
-    const log = await ConnectionLog.findOne({
-        _id: connectionLogId,
-        user: userId
-    });
-
-    if (!log) {
-        throw new AppError('No active connection log found to disconnect.', 404);
-    }
-    
-    if (log.status === 'disconnected') {
-        return { status: 'success', message: 'Already disconnected.' };
-    }
-
-    const usageReport = await vpnUtils.disconnectFromServer(log.serverIp, userId);
-    
-    log.status = 'disconnected';
-    log.disconnectTime = new Date();
-    log.dataUploadedBytes = usageReport.dataUploadedBytes || 0;
-    log.dataDownloadedBytes = usageReport.dataDownloadedBytes || 0;
-    await log.save();
-
-    const bandwidth = await BandwidthLog.findOne({ user: userId });
-    if (bandwidth) {
-        const totalUsage = usageReport.dataUploadedBytes + usageReport.dataDownloadedBytes;
-        await bandwidth.addUsage(totalUsage);
-    }
-
-    return {
-        status: 'success',
-        usageReport
-    };
-};
-
-exports.getConnectionStatus = async (userId) => {
+exports.disconnect = async (userId) => {
+    // Find active connection from database
     const log = await ConnectionLog.findOne({
         user: userId,
         status: 'connected'
     }).sort({ connectionTime: -1 });
 
     if (!log) {
-        return { status: 'disconnected', message: 'No active connection.' };
+        throw new AppError('No active connection found.', 404);
     }
 
-    const isOsConnected = await vpnUtils.getStatus(log.serverIp, userId);
+    // Disconnect from server (simulated)
+    const usageReport = await vpnUtils.disconnectFromServer(log.ipAddress, userId);
+    
+    // Update connection log
+    log.status = 'disconnected';
+    log.disconnectionTime = new Date();
+    
+    // Calculate duration
+    const durationMs = log.disconnectionTime - log.connectionTime;
+    log.durationSeconds = Math.floor(durationMs / 1000);
+    log.dataUsage = (usageReport.dataUploadedBytes || 0) + (usageReport.dataDownloadedBytes || 0);
+    
+    await log.save();
 
-    if (isOsConnected) {
-        return { status: 'connected', log };
-    } else {
-        await this.disconnect(userId, log._id);
-        return { status: 'disconnected', message: 'Cleaned up stale connection.' };
+    // Update bandwidth log if exists
+    const bandwidth = await BandwidthLog.findOne({ user: userId });
+    if (bandwidth && log.dataUsage) {
+        await bandwidth.addUsage(log.dataUsage);
     }
+
+    return {
+        status: 'Disconnected successfully',
+        log: {
+            durationMinutes: Math.round(log.durationSeconds / 60 * 10) / 10,
+            dataDownloadedMB: Math.round((usageReport.dataDownloadedBytes || 0) / 1024 / 1024 * 100) / 100,
+            dataUploadedMB: Math.round((usageReport.dataUploadedBytes || 0) / 1024 / 1024 * 100) / 100
+        }
+    };
 };
 
-exports.getAvailableServers = async () => {
-    return DUMMY_SERVER_LIST.map(server => {
-        return {
-            id: server.id,
-            location: server.location,
-            load: Math.floor(Math.random() * 80) + 10 
-        };
-    });
+exports.getConnectionStatus = async (userId) => {
+    // Just check the database - don't verify with vpnUtils
+    // In production, you'd verify with actual VPN software
+    const log = await ConnectionLog.findOne({
+        user: userId,
+        status: 'connected'
+    }).sort({ connectionTime: -1 });
+
+    if (!log) {
+        return { isConnected: false, connection: null };
+    }
+
+    return { 
+        isConnected: true, 
+        connection: {
+            _id: log._id,
+            serverLocation: log.serverLocation,
+            connectionTime: log.connectionTime,
+            clientIp: log.ipAddress
+        }
+    };
+};
+
+exports.getAvailableServers = () => {
+    return vpnUtils.getAvailableServers();
 };

@@ -1,5 +1,4 @@
 const vpnService = require('../services/vpnService');
-const ConnectionLog = require('../models/connectionLogModel');
 const AppError = require('../utils/appError');
 const asyncHandler = require('../utils/asyncHandler');
 const { getAvailableServers } = require('../utils/vpnUtils');
@@ -41,32 +40,11 @@ exports.disconnectFromVpn = asyncHandler(async (req, res, next) => {
 
 exports.getConnectionStatus = asyncHandler(async (req, res, next) => {
     const userId = req.user._id;
-    const log = await ConnectionLog.findOne({ 
-        user: userId, 
-        status: 'active' 
-    });
-
-    if (!log) {
-        return res.status(200).json({
-            status: 'success',
-            data: {
-                isConnected: false,
-                connection: null
-            }
-        });
-    }
+    const result = await vpnService.getConnectionStatus(userId);
 
     res.status(200).json({
         status: 'success',
-        data: {
-            isConnected: true,
-            connection: {
-                _id: log._id,
-                serverLocation: log.serverLocation,
-                connectionTime: log.connectionTime,
-                clientIp: log.clientIp
-            }
-        }
+        data: result
     });
 });
 
