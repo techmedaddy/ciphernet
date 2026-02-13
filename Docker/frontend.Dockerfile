@@ -1,22 +1,21 @@
-# Docker/frontend.Dockerfile
+# Use official Node.js LTS image
+FROM node:20-alpine
 
-# Use an official Node.js runtime as a parent image
-FROM node:14
+# Set working directory
+WORKDIR /app
 
-# Set the working directory in the container
-WORKDIR /usr/src/app/frontend
+# Copy frontend code
+COPY frontend/ ./frontend/
 
-# Copy package.json and package-lock.json to install dependencies
-COPY ../frontend/package*.json ./
+# Set environment variables
+ENV NODE_ENV=production
 
-# Install frontend dependencies
-RUN npm install
-
-# Copy the rest of the frontend application code
-COPY ../frontend .
-
-# Expose the frontend port
+# Expose port (will be overridden by docker-compose)
 EXPOSE 8080
 
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:${PORT:-8080}/ || exit 1
+
 # Start the frontend server
-CMD ["node", "server.js"]
+CMD ["node", "frontend/server.js"]

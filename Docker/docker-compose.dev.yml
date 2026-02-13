@@ -1,0 +1,80 @@
+# CipherNet Docker Compose - Development Mode
+# Hot-reload enabled, volume mounts for live editing
+# Run: docker compose -f docker-compose.dev.yml up --build
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:7.0
+    container_name: ciphernet-mongodb-dev
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_DATABASE: ciphernet
+    volumes:
+      - ciphernet_mongodb_dev:/data/db
+    ports:
+      - "${MONGO_PORT:-47017}:27017"
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - ciphernet-dev
+
+  # Backend API (Development with nodemon)
+  backend:
+    image: node:20-alpine
+    container_name: ciphernet-backend-dev
+    working_dir: /app
+    command: sh -c "npm install && npx nodemon backend/server.js"
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      PORT: "3000"
+      DB_URI: mongodb://mongodb:27017/ciphernet
+      JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-not-for-production}
+      JWT_EXPIRE: 7d
+      JWT_COOKIE_EXPIRES_IN: "7"
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
+      FRONTEND_URL: http://localhost:${FRONTEND_PORT:-48080}
+    volumes:
+      - ../:/app
+      - backend_node_modules:/app/node_modules
+    ports:
+      - "${BACKEND_PORT:-43001}:3000"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - ciphernet-dev
+
+  # Frontend Static Server (Development with auto-reload)
+  frontend:
+    image: node:20-alpine
+    container_name: ciphernet-frontend-dev
+    working_dir: /app/frontend
+    command: sh -c "node server.js"
+    restart: unless-stopped
+    environment:
+      PORT: "8080"
+      API_URL: http://localhost:${BACKEND_PORT:-43001}/api/v1
+    volumes:
+      - ../frontend:/app/frontend
+    ports:
+      - "${FRONTEND_PORT:-48080}:8080"
+    depends_on:
+      - backend
+    networks:
+      - ciphernet-dev
+
+networks:
+  ciphernet-dev:
+    driver: bridge
+
+volumes:
+  ciphernet_mongodb_dev:
+    name: ciphernet_mongodb_dev
+  backend_node_modules:
+    name: ciphernet_backend_node_modules

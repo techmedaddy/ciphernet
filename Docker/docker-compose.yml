@@ -1,60 +1,88 @@
+# CipherNet Docker Compose
+# Uses random high ports to avoid conflicts
+# Run: docker compose up --build
+
 services:
-  backend:
-    build:
-      context: .. # Points to the parent directory (CipherNet/)
-      dockerfile: docker/backend.Dockerfile # Specify Dockerfile for backend
-    ports:
-      - "3001:3000" # Map host port 3001 to container port 3000
+  # MongoDB Database
+  mongodb:
+    image: mongo:7.0
+    container_name: ciphernet-mongodb
+    restart: unless-stopped
     environment:
-      - NODE_ENV=production
-      - PORT=3000
-      - DB_URI=mongodb://database:27017/ciphernet
+      MONGO_INITDB_DATABASE: ciphernet
     volumes:
-      - ../backend:/usr/src/app/backend # Mount backend source code
-      - /usr/src/app/backend/node_modules # Persist node_modules
-    depends_on:
-      database:
-        condition: service_healthy # Ensure the database starts first
+      - ciphernet_mongodb_data:/data/db
+    ports:
+      - "${MONGO_PORT:-47017}:27017"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
       interval: 10s
       timeout: 5s
       retries: 5
-    restart: unless-stopped
+      start_period: 10s
+    networks:
+      - ciphernet-network
 
-  frontend:
+  # Backend API
+  backend:
     build:
-      context: .. # Points to the parent directory (CipherNet/)
-      dockerfile: docker/frontend.Dockerfile # Specify Dockerfile for frontend
+      context: ..
+      dockerfile: Docker/backend.Dockerfile
+    container_name: ciphernet-backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      DB_URI: mongodb://mongodb:27017/ciphernet
+      JWT_SECRET: ${JWT_SECRET:-ciphernet-docker-jwt-secret-change-in-production}
+      JWT_EXPIRE: 7d
+      JWT_COOKIE_EXPIRES_IN: "7"
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
+      FRONTEND_URL: http://localhost:${FRONTEND_PORT:-48080}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-sk_test_placeholder}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
     ports:
-      - "8080:8080" # Map host port 8080 to container port 8080
-    volumes:
-      - ../frontend:/usr/src/app/frontend # Mount frontend source code
-      - /usr/src/app/frontend/node_modules # Persist node_modules
+      - "${BACKEND_PORT:-43001}:3000"
     depends_on:
-      backend:
-        condition: service_healthy # Ensure the backend starts before frontend
+      mongodb:
+        condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/v1/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-    restart: unless-stopped
+      start_period: 15s
+    networks:
+      - ciphernet-network
 
-  database:
-    image: mongo:5.0 # Use a stable MongoDB version
-    ports:
-      - "27018:27017" # Map host port 27018 to MongoDB container port 27017
-    volumes:
-      - db_data:/data/db # Persist database data
-    environment:
-      - MONGO_INITDB_DATABASE=ciphernet
-    healthcheck:
-      test: ["CMD", "mongo", "--eval", "db.adminCommand('ping')"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+  # Frontend Static Server
+  frontend:
+    build:
+      context: ..
+      dockerfile: Docker/frontend.Dockerfile
+    container_name: ciphernet-frontend
     restart: unless-stopped
+    environment:
+      PORT: "8080"
+      API_URL: http://localhost:${BACKEND_PORT:-43001}/api/v1
+    ports:
+      - "${FRONTEND_PORT:-48080}:8080"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - ciphernet-network
+
+networks:
+  ciphernet-network:
+    driver: bridge
 
 volumes:
-  db_data: # Named volume for MongoDB data
+  ciphernet_mongodb_data:
+    name: ciphernet_mongodb_data

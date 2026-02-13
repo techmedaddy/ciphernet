@@ -1,20 +1,27 @@
-# Use an official Node.js image as the base
-FROM node:14
+# Use official Node.js LTS image
+FROM node:20-alpine
 
-# Set the working directory
-WORKDIR /usr/src/app/backend
+# Set working directory
+WORKDIR /app
 
-# Copy package.json and package-lock.json
-COPY ../backend/package*.json ./
+# Copy package files from root (since we're building from project root)
+COPY package*.json ./
 
-# Install backend dependencies
-RUN npm install
+# Install dependencies (use npm install since package-lock may not exist)
+RUN npm install --omit=dev
 
-# Copy the backend code
-COPY ../backend .
+# Copy backend code
+COPY backend/ ./backend/
 
-# Expose the backend port
+# Set environment variables
+ENV NODE_ENV=production
+
+# Expose port (will be overridden by docker-compose)
 EXPOSE 3000
 
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:${PORT:-3000}/api/v1/health || exit 1
+
 # Start the backend server
-CMD ["node", "server.js"]
+CMD ["node", "backend/server.js"]
